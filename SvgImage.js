@@ -34,6 +34,7 @@ const getHTML = (svgContent, style) => `
 
 class SvgImage extends Component {
   state = { fetchingUrl: null, svgContent: null };
+  webview = null;
   componentDidMount() {
     this.doFetch(this.props);
   }
@@ -51,7 +52,12 @@ class SvgImage extends Component {
       props.onLoadStart && props.onLoadStart();
       if (uri.match(/^data:image\/svg/)) {
         const index = uri.indexOf('<svg');
-        this.setState({ fetchingUrl: uri, svgContent: uri.slice(index) });
+        const replaceWith = 'document.body.innerHTML = \'' + uri.slice(index) + '\'';
+        if(this.state.fetchingUrl !== null){
+          this.webview.injectJavaScript(replaceWith);
+        }else{
+          this.setState({ fetchingUrl: uri, svgContent: uri.slice(index) });
+        }
       } else {
         try {
           const res = await fetch(uri);
@@ -74,6 +80,7 @@ class SvgImage extends Component {
       return (
         <View pointerEvents="none" style={[props.style, props.containerStyle]}>
           <WebView
+            ref={ref => (this.webview = ref)}
             originWhitelist={['*']}
             scalesPageToFit={true}
             useWebKit={false}
